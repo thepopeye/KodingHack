@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>sightGlass()</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="../stylesheets/gridstack.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.1/themes/base/jquery-ui.css"/>
+    
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.0/jquery-ui.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.5.0/lodash.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="../javascripts/gridstack.js"></script>
+    <script src="../javascripts/sight_glass.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.js"></script>
+    <script src="../javascripts/jsoneditor.js"></script>
+    <script src="../javascripts/jsonpath.js"></script>
+
+    <style type="text/css">
+    body{
+        background-color:#fff; 
+        
+    }
+        .grid-stack {
+            background: transparent;
+            width: 100%;
+           
+        }
+
+        .sightglass-widget-box {
+            color: #333;
+            text-align: center;
+            background-color: #f6f6f6;
+            border: 5px solid rgba(255,255,255,0);
+            border-radius: 20px;
+            margin:5px;
+            height:100%;
+            width:100%;
+        }
+        .sightglass-content{
+            width:100%
+            height:100%;
+            position: relative;
+            margin: 50px;
+        }
+        .title-bright{
+            color:	#000;
+            font-family: monospace;
+            font-weight:normal;
+            margin-left: 20px;
+        }
+         .title-dark{
+            color:#000;
+            font-family: serif;
+            font-weight:bold;
+        }
+        .spacer{
+            height: 30px;
+        }
+        .widget-toolbar-button{
+            color: #000;
+            margin-left: 10px;
+            margin-right: 10px;
+            margin-top: 4px;
+            cursor: pointer;
+        }
+        
+        .widget-toolbar-button:hover{
+            color: #f58000;
+        }
+        
+        .toolbar-holder{
+            margin: 30px;
+        }
+        .toolbar-button{
+            color:#000;
+            cursor: pointer;
+            margin-left:5px;
+            margin-right:5px;
+        }
+        .toolbar-button:hover{
+            color:#f58000;
+        }
+        .svg-container{
+            height:100%;
+            width: 100%;
+            border-radius: 20px;
+        }
+        .plot-container{
+            height:100%;
+            width: 100%;
+            border-radius: 20px;
+        }
+        
+        .main-svg{
+            height:80%;
+            width: 80%;
+            margin: 0 auto;
+        }
+        .modebar{
+            display: none;
+        }
+        
+        .canvasjs-chart-container{
+            height:90%;
+            width:90%;
+            border-radius: 20px;
+        }
+          canvas{
+        width: 90% !important;
+        max-width: 800px;
+        height: auto !important;
+    }
+    
+    .sightglass-widget-title{
+        margin-left: 30px;
+        margin-top: 4px;
+        color: #666;
+        font-family: monospace;
+        font-size: 16px;
+        font-weight: bold;
+    }
+        
+       
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+    <div class="row">
+        <h1 class="title-bright pull-left"><i class="fa fa-pie-chart" style="margin-right:10px; color: #f58000;" ></i>sightGlass()</h1>
+        <div class="pull-right toolbar-holder">
+        <!--<i id="download" class="fa fa-cloud-download fa-2x toolbar-button"></i>
+        <i id="upload" class="fa fa-cloud-upload fa-2x toolbar-button"></i>-->
+        
+        <i id="add-new-sparse-widget" class="fa fa-bar-chart fa-2x toolbar-button" title="Add Data Chart"></i>
+            
+        </div>
+        </div>
+        <div class="row">
+        <div id="plot-grid-main"></div>
+        </div>
+    </div>
+    
+    <div class="modal fade" tabindex="-1" role="dialog" id="editormodal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Edit Properties</h4>
+      </div>
+      <div class="modal-body" id = "editorholder">
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button id="editorsave" type="button" class="btn btn-default" data-dismiss="modal">Save</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+    <script type="text/javascript">
+    var options = {
+                float: true
+            };
+        $(function () {
+            
+           // $('.grid-stack').gridstack(options);
+            var addbtn = document.getElementById('add-new-sparse-widget');
+            addbtn.onclick = function()
+            {
+                //linechartCreate();
+                //var container = Object.create(SGWidgetContainer);
+                var widgetarray = [];
+                var bar1 = Object.create(SparseChart);
+                bar1.Top = 0;
+                bar1.Left = 0;
+                bar1.Height = 200;
+                bar1.Width = 400;
+                bar1.Title = "chart1";
+                widgetarray.push(bar1);
+                var bar2 = Object.create(SparseChart);
+                bar2.Top = 0;
+                bar2.Left = 500;
+                bar2.Height = 200;
+                bar2.Width = 400;
+                bar2.Title = "chart2";
+                widgetarray.push(bar2);
+                var bar3 = Object.create(SparseChart);
+                bar3.Top = 250;
+                bar3.Left = 50;
+                bar3.Height = 400;
+                bar3.Width = 800;
+                bar3.Title = "chart3";
+                widgetarray.push(bar3);
+                var sg = Object.create(SGPage);
+                sg.RenderPage(widgetarray, "plot-grid-main");
+                //container.Initialize(bar,"plot-grid-main");
+            };
+        });
+        
+        function myFunction(){
+            alert("resize");
+        }
+        
+        function resizeElement(sourceElementId, targetElementId, ratio){
+            var srcelement = document.getElementById(sourceElementId);
+            var targetelement = document.getElementById(targetElementId);
+            targetelement.style.height = Math.round(srcelement.clientHeight * 0.9) + 'px';
+            targetelement.style.width = Math.round(srcelement.clientWidth * 0.9) + 'px';
+        }
+        
+        function linechartCreate(){
+    var plotmain = document.getElementById('plot-grid-main');
+    var widget = document.createElement('div');
+    widget.style.height = "250px";
+    widget.style.width = "500px";
+    widget.style.left = "0px";
+    widget.style.top = "0px";
+    widget.className +=  " draggable sightglass-widget-box";
+    widget.addEventListener("resize", myFunction);
+    //widget.setAttribute("data-gs-x", "0");
+    //widget.setAttribute("data-gs-y", "0");
+    //widget.setAttribute("data-gs-width", "4");
+    //widget.setAttribute("data-gs-height", "4");
+    var widgetheader = document.createElement('div');
+    widgetheader.style.height = "50px";
+    widgetheader.style.width = "100%";
+    widgetheader.className += " row";
+    var settingsbtn = document.createElement('div');
+    settingsbtn.className += " pull-right widget-toolbar-button";
+    settingsbtn.innerHTML = '<i class="fa fa-tasks"></i>';
+    var resizebtn = document.createElement('div');
+    resizebtn.className += " pull-right widget-toolbar-button";
+    resizebtn.innerHTML = '<i class="fa fa-arrows"></i>';
+    var deletebtn = document.createElement('div');
+    deletebtn.className += " pull-right widget-toolbar-button";
+    deletebtn.innerHTML = '<i class="fa fa-trash"></i>';
+    widgetheader.appendChild(settingsbtn);
+    widgetheader.appendChild(resizebtn);
+    widgetheader.appendChild(deletebtn);
+    widget.appendChild(widgetheader);
+    var widgetcontent = document.createElement('div');
+    widgetcontent.className += " sightglass-widget-content row";
+    widgetcontent.style.height = "90%";
+    var nextid = getNextId();
+    var contentid = "widget-content-" + nextid;
+    widgetcontent.id = contentid;
+    var chartcanvas = document.createElement('canvas');
+    //chartcanvas.style.height = "200px";
+    //chartcanvas.style.width = "400px";
+    var canvasid = "widget-canvas " + nextid;
+    chartcanvas.id = canvasid;
+    widgetcontent.appendChild(chartcanvas);
+    widget.appendChild(widgetcontent);
+    plotmain.appendChild(widget);
+    $('.draggable').draggable();
+    $('.draggable').resizable();
+    var ctx = document.getElementById(canvasid).getContext("2d");
+    
+    var data = {
+    labels: ["January", "February", "March", "April", "May", "June", "July"],
+    datasets: [
+        {
+            label: "My First dataset",
+            fillColor: "rgba(220,220,220,0.2)",
+            strokeColor: "rgba(220,220,220,1)",
+            pointColor: "rgba(220,220,220,1)",
+            pointStrokeColor: "#fff",
+            pointHighlightFill: "#fff",
+            pointHighlightStroke: "rgba(220,220,220,1)",
+            data: [65, 59, 80, 81, 56, 55, 40]
+        },
+        {
+            label: "My Second dataset",
+            fillColor: "rgba(151,187,205,0.2)",
+            strokeColor: "rgba(151,187,205,1)",
+            pointColor: "rgba(151,187,205,1)",
+            pointStrokeColor: "#fff",
+            pointHighlightFill: "#fff",
+            pointHighlightStroke: "rgba(151,187,205,1)",
+            data: [28, 48, 40, 19, 86, 27, 90]
+        }
+    ]
+};
+    ctx.canvas.width = widgetcontent.clientWidth - 50;
+    ctx.canvas.height = widgetcontent.clientHeight -50;
+    var linechart = new Chart(ctx).Line(data, {responsive: true, maintainAspectRatio: false});
+    resizebtn.onclick = function()
+    {
+        var el = document.getElementById("widget-canvas " + nextid);
+        widgetcontent.removeChild(el);
+        var chartcanvas = document.createElement('canvas');
+        var canvasid = "widget-canvas " + nextid;
+        chartcanvas.id = canvasid;
+        widgetcontent.appendChild(chartcanvas);
+        var nctx = document.getElementById(canvasid).getContext("2d");
+        ctx.canvas.width = widgetcontent.clientWidth - 50;
+        ctx.canvas.height = widgetcontent.clientHeight -50;
+        var nlinechart = new Chart(nctx).Bar(data, {responsive: true, maintainAspectRatio: false});
+        
+    };
+
+
+    //$('.grid-stack').gridstack(options);
+}
+
+           /* new function () {
+                this.items = [
+                    {x: 0, y: 0, width: 2, height: 2},
+                    {x: 3, y: 1, width: 1, height: 2},
+                    {x: 4, y: 1, width: 1, height: 1},
+                    {x: 2, y: 3, width: 3, height: 1},
+                    {x: 2, y: 5, width: 1, height: 1}
+                ];
+
+                this.grid = $('.grid-stack').data('gridstack');
+
+                this.addNewWidget = function () {
+                    var node = {
+                                x: 0,//12 * Math.random(),
+                                y: 0,// * Math.random(),
+                                width: 4,
+                                height: 4
+                            };
+                    this.grid.addWidget($('<div id="sg-component-1" class="grid-stack-item-content"></div>'),
+                        node.x, node.y, node.width, node.height);
+                    //this.grid.addWidget($('<div class="grid-stack-item-content"><div id="sg-component-1" class="container sightglass-content"></div></div>'),
+                      //  node.x, node.y, node.width, node.height);
+                    
+                  /*     var data = [
+                          {
+                            x: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+                            y: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+                            type: 'scatter'
+                          }
+                        ];
+                        //var h = document.getElementById('sg-component-1').height;
+                        //var w = document.getElementById('sg-component-1').width;
+                        var layout = {
+                          autosize: false,
+                          displayModeBar: false,
+                          doubleClick: 'false',
+                          margin: {
+                            l: 10,
+                            r: 10,
+                            b: 10,
+                            t: 10,
+                            pad: 4
+                          },
+                          
+                        };
+                        Plotly.newPlot('sg-component-1', data, layout);
+                        $(".main-svg").attr('height', '100%');
+                        $(".main-svg").attr('width', '100%');
+                        $(".svg-container").css('width', '100%');
+                        $(".svg-container").css('height', '100%');
+                        var innerSVG = $(".main-svg")[0];
+                        var bbox = innerSVG.getBBox();
+                        innerSVG.setAttribute("viewBox", [bbox.x, bbox.y, bbox.width, bbox.height].join(" "));
+                        /*var chart = new CanvasJS.Chart("sg-component-1", {
+		theme: "theme2",//theme1
+		title:{
+			text: "Sample Data"              
+		},
+		animationEnabled: false,   // change to true
+		data: [              
+		{
+			// Change type to "bar", "area", "spline", "pie",etc.
+			type: "column",
+			dataPoints: [
+				{ label: "apple",  y: 10  },
+				{ label: "orange", y: 15  },
+				{ label: "banana", y: 25  },
+				{ label: "mango",  y: 30  },
+				{ label: "grape",  y: 28  }
+			]
+		}
+		]
+	});
+	chart.render();*/
+	
+	/*$('#sg-component-1').highcharts({
+        title: {
+            text: 'Monthly Average Temperature',
+            x: -20 //center
+        },
+        subtitle: {
+            text: 'Source: WorldClimate.com',
+            x: -20
+        },
+        xAxis: {
+            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        },
+        yAxis: {
+            title: {
+                text: 'Temperature (°C)'
+            },
+            plotLines: [{
+                value: 0,
+                width: 1,
+                color: '#808080'
+            }]
+        },
+        tooltip: {
+            valueSuffix: '°C'
+        },
+        legend: {
+            layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'middle',
+            borderWidth: 0
+        },
+        series: [{
+            name: 'Tokyo',
+            data: [7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 25.2, 26.5, 23.3, 18.3, 13.9, 9.6]
+        }, {
+            name: 'New York',
+            data: [-0.2, 0.8, 5.7, 11.3, 17.0, 22.0, 24.8, 24.1, 20.1, 14.1, 8.6, 2.5]
+        }, {
+            name: 'Berlin',
+            data: [-0.9, 0.6, 3.5, 8.4, 13.5, 17.0, 18.6, 17.9, 14.3, 9.0, 3.9, 1.0]
+        }, {
+            name: 'London',
+            data: [3.9, 4.2, 5.7, 8.5, 11.9, 15.2, 17.0, 16.6, 14.2, 10.3, 6.6, 4.8]
+        }]
+    });
+
+                        $(".highcharts-container").css('width', '90%');
+                        $(".highcharts-container").css('height', '90%');
+                        $(".highcharts-container").css('margin', '0 auto');
+                         return false;
+                         
+                          
+                         
+                }.bind(this);
+                
+                $('#add-new-widget').click(this.addNewWidget);
+            };
+        });*/
+    </script>
+</body>
+
+</html>
